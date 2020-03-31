@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 import com.brain2.demo.repos.PostRepo;
 import com.brain2.demo.repos.TopicRepo;
 import com.brain2.demo.repos.TopicTagsRepo;
-import com.google.common.collect.Iterables;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,6 @@ public class DemoApplication {
 	private static final Logger log = LoggerFactory.getLogger(DemoApplication.class);
 
 	public static void main(String[] args) {
-
 		SpringApplication.run(DemoApplication.class, args);
 	}
 
