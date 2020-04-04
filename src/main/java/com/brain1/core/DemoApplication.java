@@ -28,8 +28,5 @@ public class DemoApplication {
 		};
 	}
 
-	private Consumer<? super Object> systout() {
-		return o -> System.out.println(o);
-	}
 
 }
