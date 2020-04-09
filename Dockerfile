@@ -1,10 +1,10 @@
 
-FROM openjdk:13-alpine
+FROM openjdk:14-slim
 VOLUME /tmp
 ARG JAVA_OPTS
 ENV JAVA_OPTS=$JAVA_OPTS
-ADD target/demo-0.0.1-SNAPSHOT.jar demo.jar
+ADD target/core-0.0.1-SNAPSHOT.jar core.jar
 EXPOSE 8080
-ENTRYPOINT exec java $JAVA_OPTS -jar demo.jar
+ENTRYPOINT exec java --enable-preview $JAVA_OPTS -jar core.jar
 # For Spring-Boot project, use the entrypoint below to reduce Tomcat startup time.
 #ENTRYPOINT exec java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar demo.jar
