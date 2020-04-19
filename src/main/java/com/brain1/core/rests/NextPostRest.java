@@ -1,7 +1,6 @@
 package com.brain1.core.rests;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -62,6 +61,10 @@ public class NextPostRest {
         return idToReturn;
 
     }
+    
+    private boolean timeToRepeatWronglyAnswered() {
+        return userTestMaintenance.getWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 2 == 0;
+    }
 
     private Integer getRandomWrongAnswer() {
         Random generator = new Random();
@@ -97,9 +100,6 @@ public class NextPostRest {
         return postToReturn.getRealPostsInTopics();
     }
 
-    private boolean timeToRepeatWronglyAnswered() {
-        return userTestMaintenance.getWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 2 == 0;
-    }
 
     private void removeFromWrongAnswersIfPossible() {
         if (userTestMaintenance.getWrongAnswers().containsKey(userTestMaintenance.getLastPid())) {

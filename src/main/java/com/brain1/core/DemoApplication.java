@@ -20,6 +20,11 @@ public class DemoApplication {
 	@Bean
 	public CommandLineRunner demo() {
 		return (args) -> {
+			Object obj = "viola";
+			if (obj instanceof String) {
+				String str = (String) obj; 
+				System.out.println(str);
+			}
 			// topicRepo.findAll().forEach(systout());
 			// Iterables.limit(topicRepo.findAll(), 10).forEach(systout());
 			// Iterables.limit(postRepo.findAll(), 10).forEach(systout());
