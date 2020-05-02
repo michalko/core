@@ -1,7 +1,7 @@
 
 FROM openjdk:14-slim
 VOLUME /tmp
-ARG JAVA_OPTS
+ARG JAVA_OPTS=-Dspring.profiles.active=prod
 ENV JAVA_OPTS=$JAVA_OPTS
 ADD target/core-0.0.1-SNAPSHOT.jar core.jar
 EXPOSE 8080

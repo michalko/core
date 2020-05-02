@@ -61,7 +61,7 @@ public class NextPostRest {
         return idToReturn;
 
     }
-    
+
     private boolean timeToRepeatWronglyAnswered() {
         return userTestMaintenance.getWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 2 == 0;
     }
@@ -82,6 +82,9 @@ public class NextPostRest {
     private Integer getPostIdFromDB(final String topic, final Optional<String> sub, final int topRank) {
         final var postsToOmit = Sets.union(userTestMaintenance.getLastPostsIds(),
                 Set.of(userTestMaintenance.getLastPid()));
+
+        System.out.format("postsToOmit %s %s %s %n", postsToOmit, userTestMaintenance.getLastPostsIds(),
+                userTestMaintenance.getLastPid());
         final var list = nextPostService.getNextPost(topic, sub, topRank, postsToOmit);
         final var listSize = list.size();
         if (userTestMaintenance.getPostsNum() == 0 || Math.abs(userTestMaintenance.getTopRank() - topRank) > 10) {
@@ -99,7 +102,6 @@ public class NextPostRest {
         userTestMaintenance.setAnswerCount(userTestMaintenance.getAnswerCount() + 1);
         return postToReturn.getRealPostsInTopics();
     }
-
 
     private void removeFromWrongAnswersIfPossible() {
         if (userTestMaintenance.getWrongAnswers().containsKey(userTestMaintenance.getLastPid())) {
