@@ -1,5 +1,6 @@
 package com.brain1.core.models;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -11,12 +12,15 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.google.common.collect.Sets;
 
 @Entity
-public class Topic {
+public class Topic implements Serializable {
+  /**
+   *
+   */
+  private static final long serialVersionUID = -7713400997390445013L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)

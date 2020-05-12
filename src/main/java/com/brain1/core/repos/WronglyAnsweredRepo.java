@@ -1,9 +1,7 @@
 package com.brain1.core.repos;
 
-import java.util.ArrayList;
 import java.util.Set;
 
-import com.brain1.core.models.Post;
 import com.brain1.core.models.WronglyAnswered;
 
 import org.springframework.data.jpa.repository.Query;
@@ -11,9 +9,10 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface WronglyAnsweredRepo extends CrudRepository<WronglyAnswered, String> {
 
-    @Query(value = "SELECT * FROM Post p join Topic top on top.id = p.topic_id where top.name = ?1 and p.id not in (?3) ORDER BY ABS(correct_precent - ?2) LIMIT 40", nativeQuery = true)
-    ArrayList<Post> findRandomsWithinCorrectRatio(String topic, Integer correctPrecent, Set<String> ids);
+    @Query(value = "SELECT * FROM wrongly_answered wa where wa.uid = ?1 and wa.pid not in (?2) LIMIT 40", nativeQuery = true)
+    WronglyAnswered findRandomForUser(String uid, Set<String> pids);
 
-    // @Query(value = "SELECT * FROM Post p join post_tags pt on p.id = pt.post_id join tag t on pt.tag_id = t.id join Topic top on top.id = p.topic_id  where top.name = ?1 and p.id not in (?3) and t.name = ?4 ORDER BY ABS(correct_precent - ?2) LIMIT 40", nativeQuery = true)
-    // ArrayList<Post> findRandomsWithinCorrectRatio(String topic, Integer correctPrecent, Set<String> ids, String tag);
+    @Query(value = "SELECT * FROM wrongly_answered wa where wa.uid = ?1 LIMIT 40", nativeQuery = true)
+    WronglyAnswered findRandomForUser(String uid);
+
 }

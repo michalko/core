@@ -1,22 +1,18 @@
 package com.brain1.core.rests;
 
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 
-import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 
+import com.brain1.core.records.PostStat;
 import com.brain1.core.services.NextPostService;
-import com.google.common.collect.Maps;
+import com.brain1.core.sessionScoped.UserTestMaintenance;
 import com.google.common.collect.Sets;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.annotation.SessionScope;
 
 @RestController
 @RequestMapping("/nextpost")
@@ -32,8 +27,8 @@ import org.springframework.web.context.annotation.SessionScope;
 public class NextPostRest {
     static Random random = new Random();
 
-    @Resource(name = "lastReadPosts")
-    MyConfiguration.UserTestMaintenance userTestMaintenance;
+    @Autowired
+    UserTestMaintenance userTestMaintenance;
 
     @Autowired
     NextPostService nextPostService;
@@ -44,22 +39,29 @@ public class NextPostRest {
     public @NotNull Integer getNextPost(@NotNull @PathVariable(value = "topic") final String topic,
             @RequestParam("sub") final Optional<String> sub, @RequestParam("topRank") final int topRank,
             @RequestParam("lastCorrect") final boolean lastCorrect) {
+        maintainPrevQuestion(lastCorrect);
+        return getNextQuestion(topic, sub, topRank);
+    }
 
-        if (lastCorrect) {
+    private void maintainPrevQuestion(final boolean lastCorrect) {
+        if (lastCorrect)
             removeFromWrongAnswersIfPossible();
-        } else {
-            userTestMaintenance.getWrongAnswers().put(userTestMaintenance.getLastPid(),
-                    new PostStat(userTestMaintenance.getRealId(), 2));
-        }
+        else
+            addToWrongAnswers();
 
-        Integer idToReturn = null;
-        if (timeToRepeatWronglyAnswered()) {
-            idToReturn = getRandomWrongAnswer();
-        } else {
-            idToReturn = getPostIdFromDB(topic, sub, topRank);
-        }
-        return idToReturn;
+    }
 
+    private Integer getNextQuestion(final String topic, final Optional<String> sub, final int topRank) {
+        if (timeToRepeatWronglyAnswered())
+            return getRandomWrongAnswer();
+        else
+            return getPostIdFromDB(topic, sub, topRank);
+
+    }
+
+    private void addToWrongAnswers() {
+        userTestMaintenance.getWrongAnswers().put(userTestMaintenance.getLastPid(),
+                new PostStat(userTestMaintenance.getRealId(), 2));
     }
 
     private boolean timeToRepeatWronglyAnswered() {
@@ -72,11 +74,11 @@ public class NextPostRest {
         PostStat nextRandomPost = null;
         do {
             nextRandomPost = (PostStat) values[generator.nextInt(values.length)];
-        } while (nextRandomPost.realPostsInTopics == userTestMaintenance.getRealId());
+        } while (nextRandomPost.realPostsInTopics() == userTestMaintenance.getRealId());
 
-        userTestMaintenance.setRealId(nextRandomPost.realPostsInTopics);
+        userTestMaintenance.setRealId(nextRandomPost.realPostsInTopics());
         userTestMaintenance.setAnswerCount(userTestMaintenance.getAnswerCount() + 1);
-        return nextRandomPost.realPostsInTopics;
+        return nextRandomPost.realPostsInTopics();
     }
 
     private Integer getPostIdFromDB(final String topic, final Optional<String> sub, final int topRank) {
@@ -106,7 +108,7 @@ public class NextPostRest {
     private void removeFromWrongAnswersIfPossible() {
         if (userTestMaintenance.getWrongAnswers().containsKey(userTestMaintenance.getLastPid())) {
             var postStat = userTestMaintenance.getWrongAnswers().get(userTestMaintenance.getLastPid());
-            PostStat newStat = new PostStat(postStat.realPostsInTopics, postStat.count - 1);
+            PostStat newStat = new PostStat(postStat.realPostsInTopics(), postStat.count() - 1);
             userTestMaintenance.getWrongAnswers().put(userTestMaintenance.getLastPid(), newStat);
         }
     }
@@ -116,93 +118,4 @@ public class NextPostRest {
         return gauss < 0 || gauss >= listSize ? listSize / 2 : gauss;
     }
 
-    record PostStat(int realPostsInTopics, int count) {
-    }
-
-    @Configuration
-    public class MyConfiguration {
-        @Bean
-        @SessionScope
-        public UserTestMaintenance lastReadPosts() {
-            return new UserTestMaintenance();
-        }
-
-        @Component
-        public class UserTestMaintenance {
-            private final Set<String> lastPosts;
-            private final HashMap<String, PostStat> wrongAnswers;
-            private int postsNum;
-            private int topRank;
-            private String lastPid = "0";
-            private int lastReadId = 0;
-            private int answerCount = 22;
-
-            UserTestMaintenance() {
-                lastPosts = Sets.newHashSet("1");
-                wrongAnswers = Maps.newHashMap();
-            }
-
-            void clear() {
-                lastPosts.clear();
-                postsNum = 0;
-            }
-
-            public HashMap<String, PostStat> getWrongAnswers() {
-                return wrongAnswers;
-            }
-
-            Set<String> getLastPostsIds() {
-                return lastPosts;
-            }
-
-            void addPost(final String pid) {
-                lastPosts.add(pid);
-                if (lastPosts.size() > (postsNum / 2)) {
-                    clear();
-                }
-            }
-
-            public int getPostsNum() {
-                return postsNum;
-            }
-
-            public void setPostsNum(final int postsNum) {
-                this.postsNum = postsNum;
-            }
-
-            public int getTopRank() {
-                return topRank;
-            }
-
-            public void setTopRank(final int topRank) {
-                this.topRank = topRank;
-            }
-
-            public int getRealId() {
-                return lastReadId;
-            }
-
-            public void setRealId(final int lastReadId) {
-                this.lastReadId = lastReadId;
-            }
-
-            public String getLastPid() {
-                return lastPid;
-            }
-
-            public void setLastPid(final String lastPid) {
-                this.lastPid = lastPid;
-            }
-
-            public int getAnswerCount() {
-                return answerCount;
-            }
-
-            public void setAnswerCount(int answerCount) {
-                this.answerCount = answerCount;
-            }
-
-        }
-
-    }
 }
