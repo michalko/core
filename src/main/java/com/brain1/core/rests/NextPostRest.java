@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 
 import com.brain1.core.records.PostStat;
 import com.brain1.core.services.NextPostService;
-import com.brain1.core.sessionScoped.UserTestMaintenance;
+import com.brain1.core.sessionScoped.UserTestMaintenanceOldSession;
 import com.google.common.collect.Sets;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +25,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/nextpost")
 @CrossOrigin(origins = { "http://localhost:3000", "https://brainmatter.xyz" })
 public class NextPostRest {
-    static Random random = new Random();
+    private static Random random;
+
+    static {
+        random = new Random();
+    }
 
     @Autowired
-    UserTestMaintenance userTestMaintenance;
+    private UserTestMaintenanceOldSession userTestMaintenance;
 
     @Autowired
-    NextPostService nextPostService;
+    private NextPostService nextPostService;
+
+    @GetMapping(value = "/startForUser/{uid}")
+    @ResponseStatus(code = HttpStatus.OK)
+    public void createUserTestSession(@NotNull @PathVariable(value = "uid") final String uid) {
+        System.out.println("creating ses for " + uid);
+        userTestMaintenance.init(uid);
+    }
 
     // @Cacheable(value = "postsNearRank")
     @GetMapping(value = "/{topic}")
@@ -39,6 +50,10 @@ public class NextPostRest {
     public @NotNull Integer getNextPost(@NotNull @PathVariable(value = "topic") final String topic,
             @RequestParam("sub") final Optional<String> sub, @RequestParam("topRank") final int topRank,
             @RequestParam("lastCorrect") final boolean lastCorrect) {
+
+        // SecurityContextHolder.getContext();
+        System.out.println("current user");
+
         maintainPrevQuestion(lastCorrect);
         return getNextQuestion(topic, sub, topRank);
     }
@@ -52,11 +67,11 @@ public class NextPostRest {
     }
 
     private Integer getNextQuestion(final String topic, final Optional<String> sub, final int topRank) {
-        if (timeToRepeatWronglyAnswered())
+
+        if (timeToRepeatWronglyAnsweredInSession())
             return getRandomWrongAnswer();
         else
             return getPostIdFromDB(topic, sub, topRank);
-
     }
 
     private void addToWrongAnswers() {
@@ -64,10 +79,15 @@ public class NextPostRest {
                 new PostStat(userTestMaintenance.getRealId(), 2));
     }
 
-    private boolean timeToRepeatWronglyAnswered() {
+    private boolean timeToRepeatWronglyAnsweredInSession() {
         return userTestMaintenance.getWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 2 == 0;
     }
 
+    /**
+     * Get wrongly answered in this session
+     * 
+     * @return realId
+     */
     private Integer getRandomWrongAnswer() {
         Random generator = new Random();
         var values = userTestMaintenance.getWrongAnswers().values().toArray();
