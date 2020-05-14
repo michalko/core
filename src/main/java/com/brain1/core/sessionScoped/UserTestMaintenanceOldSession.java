@@ -1,12 +1,14 @@
 package com.brain1.core.sessionScoped;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Queue;
 
 import javax.annotation.Nonnull;
 
 import com.brain1.core.feignRests.MasterdataFeign;
-import com.brain1.core.models.WronglyAnswered;
 import com.brain1.core.transport.WronglyAnsweredRecord;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +18,11 @@ import org.springframework.web.context.annotation.SessionScope;
 @Component
 @SessionScope
 public class UserTestMaintenanceOldSession extends UserTestMaintenance {
-
     @Autowired
     MasterdataFeign masterdataFeign;
 
     private String uid;
-    private List<WronglyAnsweredRecord> wronglyAnsweredRecords;
+    private Queue<WronglyAnsweredRecord> wronglyAnsweredRecords;
 
     public void init(@Nonnull String uid) {
         this.uid = uid;
@@ -29,10 +30,7 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     }
 
     private void loadWronglyAnswered() {
-        System.out.println("loading for user " + uid);
-        final var waList = masterdataFeign.getWronglyAnswered(uid);
-        System.out.println(waList);
-        this.wronglyAnsweredRecords = waList;
+        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid));
     }
 
     public String getUid() {
@@ -43,11 +41,12 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
         this.uid = uid;
     }
 
-    public List<WronglyAnsweredRecord> getWronglyAnsweredRecords() {
+    public Queue<WronglyAnsweredRecord> getWronglyAnsweredRecords() {
         return wronglyAnsweredRecords;
     }
 
-    public void setWronglyAnsweredRecords(List<WronglyAnsweredRecord> wronglyAnsweredRecords) {
+    public void setWronglyAnsweredRecords(Queue<WronglyAnsweredRecord> wronglyAnsweredRecords) {
         this.wronglyAnsweredRecords = wronglyAnsweredRecords;
     }
+
 }

@@ -13,21 +13,20 @@ import org.springframework.web.context.annotation.SessionScope;
 @Component
 @SessionScope
 public class UserTestMaintenance {
-    private final Set<String> lastPosts;
+    private final Set<String> lastPostPids;
     private final HashMap<String, PostStat> wrongAnswers;
     private int postsNum;
     private int topRank;
-    private String lastPid = "0";
-    private int lastReadId = 0;
+    private PostStat lastPost;
     private int answerCount = 22;
 
     UserTestMaintenance() {
-        lastPosts = Sets.newHashSet("1");
+        lastPostPids = Sets.newHashSet("1");
         wrongAnswers = Maps.newHashMap();
     }
 
     void clear() {
-        lastPosts.clear();
+        lastPostPids.clear();
         postsNum = 0;
     }
 
@@ -36,12 +35,12 @@ public class UserTestMaintenance {
     }
 
     public Set<String> getLastPostsIds() {
-        return lastPosts;
+        return lastPostPids;
     }
 
     public void addPost(final String pid) {
-        lastPosts.add(pid);
-        if (lastPosts.size() > (postsNum / 2)) {
+        lastPostPids.add(pid);
+        if (lastPostPids.size() > (postsNum / 2)) {
             clear();
         }
     }
@@ -62,28 +61,20 @@ public class UserTestMaintenance {
         this.topRank = topRank;
     }
 
-    public int getRealId() {
-        return lastReadId;
-    }
-
-    public void setRealId(final int lastReadId) {
-        this.lastReadId = lastReadId;
-    }
-
-    public String getLastPid() {
-        return lastPid;
-    }
-
-    public void setLastPid(final String lastPid) {
-        this.lastPid = lastPid;
-    }
-
     public int getAnswerCount() {
         return answerCount;
     }
 
     public void setAnswerCount(final int answerCount) {
         this.answerCount = answerCount;
+    }
+
+    public PostStat getLastPost() {
+        return lastPost;
+    }
+
+    public void setLastPost(PostStat lastPost) {
+        this.lastPost = lastPost;
     }
 
 }

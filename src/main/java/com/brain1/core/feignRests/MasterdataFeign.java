@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @FeignClient("masterdata")
 public interface MasterdataFeign {
-
     @RequestMapping(method = RequestMethod.GET, value = "/wrongly/{uid}")
     List<WronglyAnsweredRecord> getWronglyAnswered(@PathVariable @Nonnull String uid);
 }

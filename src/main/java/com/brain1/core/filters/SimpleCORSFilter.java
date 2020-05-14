@@ -36,24 +36,6 @@ public class SimpleCORSFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        System.out.println("getHeaderNames");
-        StreamSupport
-                .stream(Spliterators.spliteratorUnknownSize(request.getHeaderNames().asIterator(), Spliterator.ORDERED),
-                        false)
-                .forEach(o -> {
-                    System.out.println(o);
-                });
-
-                
-
-        
-                System.out.println(request.getHeader("connection"));
-                System.out.println(request.getHeader("referer"));
-                System.out.println(request.getHeader("origin"));
-                System.out.println(request.getHeader("cookie"));
-                System.out.println(request.getHeader("host"));
-                System.out.println("getHeaderNames 2");
-
         response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
         response.setHeader("Access-Control-Allow-Credentials", "true");
         response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT, PATCH");
