@@ -22,15 +22,17 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     MasterdataFeign masterdataFeign;
 
     private String uid;
+    private String topic;
     private Queue<WronglyAnsweredRecord> wronglyAnsweredRecords;
 
-    public void init(@Nonnull String uid) {
+    public void init(@Nonnull String uid, @Nonnull String topic) {
         this.uid = uid;
+        this.topic = topic;
         loadWronglyAnswered();
     }
 
     private void loadWronglyAnswered() {
-        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid));
+        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
     }
 
     public String getUid() {

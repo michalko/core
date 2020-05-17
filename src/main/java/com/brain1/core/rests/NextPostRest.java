@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import com.brain1.core.records.PostStat;
+import com.brain1.core.records.StartTestSession;
 import com.brain1.core.services.NextPostService;
 import com.brain1.core.sessionScoped.UserTestMaintenanceOldSession;
 import com.google.common.collect.Sets;
@@ -18,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -45,17 +48,20 @@ public class NextPostRest {
     public @NotNull Integer getNextPost(@NotNull @PathVariable(value = "topic") final String topic,
             @RequestParam("sub") final Optional<String> sub, @RequestParam("topRank") final int topRank,
             @RequestParam("lastCorrect") final boolean lastCorrect) {
-        System.out.println("current user");
+        System.out.println("current user ");
 
         maintainPrevQuestion(lastCorrect);
         return getNextQuestion(topic, sub, topRank);
     }
 
-    @GetMapping(value = "/startForUser/{uid}")
+    @PostMapping("/startForUser")
     @ResponseStatus(code = HttpStatus.OK)
-    public void createUserTestSession(@NotNull @PathVariable(value = "uid") final String uid) {
-        userTestMaintenance.init(uid);
+    public void createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
+
+        System.out.println("init session for " + sts.toString());
+        userTestMaintenance.init(sts.uid(), sts.topic());
     }
+
 
     private void maintainPrevQuestion(final boolean lastCorrect) {
         if (lastCorrect)
@@ -76,13 +82,14 @@ public class NextPostRest {
     private Integer getNextWronglyAnswered() {
         System.out.println("returning wrongly ans");
         System.out.println(userTestMaintenance.getWronglyAnsweredRecords().toString());
-        var post = userTestMaintenance.getWronglyAnsweredRecords().poll();
+        final var post = userTestMaintenance.getWronglyAnsweredRecords().poll();
         updateUserSession(post.pid(), post.realId());
         return post.realId();
     }
 
     private boolean isWronglyAnsweredQueueNotEmpty() {
-        return !userTestMaintenance.getWronglyAnsweredRecords().isEmpty();
+        return userTestMaintenance.getWronglyAnsweredRecords() != null
+                && !userTestMaintenance.getWronglyAnsweredRecords().isEmpty();
     }
 
     private void addToWrongAnswers() {
@@ -126,9 +133,7 @@ public class NextPostRest {
         }
 
         System.out.format("list 1 ", list);
-        final var gauss = nextPostIndex(listSize);
-        System.out.println(list);
-        final var postToReturn = list.get(gauss);
+        final var postToReturn = list.get(nextPostIndex(listSize));
 
         updateUserSession(postToReturn.getId(), postToReturn.getRealPostsInTopics());
         return postToReturn.getRealPostsInTopics();

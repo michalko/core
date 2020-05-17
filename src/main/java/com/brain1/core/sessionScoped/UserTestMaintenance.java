@@ -3,6 +3,9 @@ package com.brain1.core.sessionScoped;
 import java.util.HashMap;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import com.brain1.core.records.PostStat;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -19,6 +22,20 @@ public class UserTestMaintenance {
     private int topRank;
     private PostStat lastPost;
     private int answerCount = 22;
+
+    @PostConstruct
+    public void onSessionCreate() {
+
+        System.out.println("!!!! Session created !!!!!!!");
+        // clean stuff up...
+    }
+
+    @PreDestroy
+    public void onSessionDestroyed() {
+
+        System.out.println("!!!! Session destroyed !!!!!!!");
+        // clean stuff up...
+    }
 
     UserTestMaintenance() {
         lastPostPids = Sets.newHashSet("1");
@@ -78,4 +95,3 @@ public class UserTestMaintenance {
     }
 
 }
-
