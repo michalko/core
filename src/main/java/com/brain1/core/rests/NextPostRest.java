@@ -56,12 +56,11 @@ public class NextPostRest {
 
     @PostMapping("/startForUser")
     @ResponseStatus(code = HttpStatus.OK)
-    public void createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
-
+    public int createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
         System.out.println("init session for " + sts.toString());
         userTestMaintenance.init(sts.uid(), sts.topic());
+        return userTestMaintenance.getWronglyAnsweredRecords().size();
     }
-
 
     private void maintainPrevQuestion(final boolean lastCorrect) {
         if (lastCorrect)
@@ -132,7 +131,7 @@ public class NextPostRest {
             userTestMaintenance.setTopRank(topRank);
         }
 
-        System.out.format("list 1 ", list);
+        System.out.println("list 1 " + list);
         final var postToReturn = list.get(nextPostIndex(listSize));
 
         updateUserSession(postToReturn.getId(), postToReturn.getRealPostsInTopics());

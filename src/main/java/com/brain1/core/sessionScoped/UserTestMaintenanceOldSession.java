@@ -32,7 +32,11 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     }
 
     private void loadWronglyAnswered() {
-        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
+
+        System.out.println(" calling feign " + uid + " " + topic);
+        final var aw = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
+        System.out.println("aw " + aw.size());
+        this.wronglyAnsweredRecords = aw;
     }
 
     public String getUid() {

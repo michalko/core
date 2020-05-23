@@ -17,7 +17,7 @@ import feign.hystrix.FallbackFactory;
 
 @FeignClient(name = "masterdata", fallbackFactory = MasterdataFeignFallbackFactory.class)
 public interface MasterdataFeign {
-    @RequestMapping(method = RequestMethod.GET, value = "/wrongly/{uid}")
+    @RequestMapping(method = RequestMethod.GET, value = "/wrongly/{uid}/{topic}")
     List<WronglyAnsweredRecord> getWronglyAnswered(@PathVariable @Nonnull String uid,
             @PathVariable @Nonnull String topic);
 }
