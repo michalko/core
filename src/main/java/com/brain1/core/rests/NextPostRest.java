@@ -12,6 +12,7 @@ import com.brain1.core.records.PostStat;
 import com.brain1.core.records.StartTestSession;
 import com.brain1.core.services.NextPostService;
 import com.brain1.core.sessionScoped.UserTestMaintenanceOldSession;
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,18 +49,13 @@ public class NextPostRest {
     public @NotNull Integer getNextPost(@NotNull @PathVariable(value = "topic") final String topic,
             @RequestParam("sub") final Optional<String> sub, @RequestParam("topRank") final int topRank,
             @RequestParam("lastCorrect") final boolean lastCorrect) {
-        System.out.println("current user ");
-
-        maintainPrevQuestion(lastCorrect);
+        maintainUserSession(sub, lastCorrect);
         return getNextQuestion(topic, sub, topRank);
     }
 
-    @PostMapping("/startForUser")
-    @ResponseStatus(code = HttpStatus.OK)
-    public int createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
-        System.out.println("init session for " + sts.toString());
-        userTestMaintenance.init(sts.uid(), sts.topic());
-        return userTestMaintenance.getWronglyAnsweredRecords().size();
+    private void maintainUserSession(final Optional<String> sub, final boolean lastCorrect) {
+        maintainPrevQuestion(lastCorrect);
+        updateLastSub(sub);
     }
 
     private void maintainPrevQuestion(final boolean lastCorrect) {
@@ -67,6 +63,17 @@ public class NextPostRest {
             removeFromWrongAnswers();
         else
             addToWrongAnswers();
+    }
+
+    private void updateLastSub(Optional<String> sub) {
+        if (subHasChanged(sub)) {
+            userTestMaintenance.clearCurrentWrongAnswers();
+            userTestMaintenance.setCurrentSub(sub.orElse(null));
+        }
+    }
+
+    private boolean subHasChanged(Optional<String> sub) {
+        return !Objects.equal(sub.orElse(null), userTestMaintenance.getCurrentSub());
     }
 
     private Integer getNextQuestion(final String topic, final Optional<String> sub, final int topRank) {
@@ -78,8 +85,14 @@ public class NextPostRest {
             return getPostIdFromDB(topic, sub, topRank);
     }
 
+    @PostMapping("/startForUser")
+    @ResponseStatus(code = HttpStatus.OK)
+    public int createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
+        userTestMaintenance.init(sts.uid(), sts.topic());
+        return userTestMaintenance.getWronglyAnsweredRecords().size();
+    }
+
     private Integer getNextWronglyAnswered() {
-        System.out.println("returning wrongly ans");
         System.out.println(userTestMaintenance.getWronglyAnsweredRecords().toString());
         final var post = userTestMaintenance.getWronglyAnsweredRecords().poll();
         updateUserSession(post.pid(), post.realId());
@@ -92,12 +105,14 @@ public class NextPostRest {
     }
 
     private void addToWrongAnswers() {
-        userTestMaintenance.getWrongAnswers().put(userTestMaintenance.getLastPost().pid(),
-                new PostStat(userTestMaintenance.getLastPost().pid(), userTestMaintenance.getLastPost().realId(), 2));
+        if (userTestMaintenance.getLastPost() != null) {
+            userTestMaintenance.getCurrentWrongAnswers().put(userTestMaintenance.getLastPost().pid(), new PostStat(
+                    userTestMaintenance.getLastPost().pid(), userTestMaintenance.getLastPost().realId(), 2));
+        }
     }
 
     private boolean timeToRepeatWronglyAnsweredInSession() {
-        return userTestMaintenance.getWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 2 == 0;
+        return userTestMaintenance.getCurrentWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 4 == 0;
     }
 
     /**
@@ -107,7 +122,7 @@ public class NextPostRest {
      */
     private Integer getRandomWrongAnswerFromThisSession() {
         final Random generator = new Random();
-        final var values = userTestMaintenance.getWrongAnswers().values().toArray();
+        final var values = userTestMaintenance.getCurrentWrongAnswers().values().toArray();
         PostStat nextRandomPost = null;
         do {
             nextRandomPost = (PostStat) values[generator.nextInt(values.length)];
@@ -123,15 +138,14 @@ public class NextPostRest {
             return Sets.union(userTestMaintenance.getLastPostsIds(), Set.of(lastPost.pid()));
         }).orElseGet(() -> null);
 
-        System.out.format("postsToOmit ", postsToOmit);
         final var list = nextPostService.getNextPost(topic, sub, topRank, postsToOmit);
         final var listSize = list.size();
+
         if (userTestMaintenance.getPostsNum() == 0 || Math.abs(userTestMaintenance.getTopRank() - topRank) > 10) {
             userTestMaintenance.setPostsNum(listSize);
             userTestMaintenance.setTopRank(topRank);
         }
 
-        System.out.println("list 1 " + list);
         final var postToReturn = list.get(nextPostIndex(listSize));
 
         updateUserSession(postToReturn.getId(), postToReturn.getRealPostsInTopics());
@@ -146,9 +160,9 @@ public class NextPostRest {
 
     private void removeFromWrongAnswers() {
         Optional.ofNullable(userTestMaintenance.getLastPost()).ifPresent(lastPost -> {
-            final var postStat = userTestMaintenance.getWrongAnswers().get(lastPost.pid());
+            final var postStat = userTestMaintenance.getCurrentWrongAnswers().get(lastPost.pid());
             if (postStat != null) {
-                userTestMaintenance.getWrongAnswers().put(lastPost.pid(),
+                userTestMaintenance.getCurrentWrongAnswers().put(lastPost.pid(),
                         new PostStat(postStat.pid(), postStat.realId(), postStat.count() - 1));
             }
         });

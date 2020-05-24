@@ -24,26 +24,23 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     private String uid;
     private String topic;
     private Queue<WronglyAnsweredRecord> wronglyAnsweredRecords;
+    private String currentSub;
 
-    public void init(@Nonnull String uid, @Nonnull String topic) {
+    public void init(@Nonnull final String uid, @Nonnull final String topic) {
         this.uid = uid;
         this.topic = topic;
         loadWronglyAnswered();
     }
 
     private void loadWronglyAnswered() {
-
-        System.out.println(" calling feign " + uid + " " + topic);
-        final var aw = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
-        System.out.println("aw " + aw.size());
-        this.wronglyAnsweredRecords = aw;
+        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
     }
 
     public String getUid() {
         return uid;
     }
 
-    public void setUid(String uid) {
+    public void setUid(final String uid) {
         this.uid = uid;
     }
 
@@ -51,8 +48,16 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
         return wronglyAnsweredRecords;
     }
 
-    public void setWronglyAnsweredRecords(Queue<WronglyAnsweredRecord> wronglyAnsweredRecords) {
+    public void setWronglyAnsweredRecords(final Queue<WronglyAnsweredRecord> wronglyAnsweredRecords) {
         this.wronglyAnsweredRecords = wronglyAnsweredRecords;
+    }
+
+    public String getCurrentSub() {
+        return currentSub;
+    }
+
+    public void setCurrentSub(String currentSub) {
+        this.currentSub = currentSub;
     }
 
 }

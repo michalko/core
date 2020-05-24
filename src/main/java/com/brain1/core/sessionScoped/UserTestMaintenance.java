@@ -17,7 +17,7 @@ import org.springframework.web.context.annotation.SessionScope;
 @SessionScope
 public class UserTestMaintenance {
     private final Set<String> lastPostPids;
-    private final HashMap<String, PostStat> wrongAnswers;
+    private final HashMap<String, PostStat> currentWrongAnswers;
     private int postsNum;
     private int topRank;
     private PostStat lastPost;
@@ -39,7 +39,7 @@ public class UserTestMaintenance {
 
     UserTestMaintenance() {
         lastPostPids = Sets.newHashSet("1");
-        wrongAnswers = Maps.newHashMap();
+        currentWrongAnswers = Maps.newHashMap();
     }
 
     void clear() {
@@ -47,8 +47,12 @@ public class UserTestMaintenance {
         postsNum = 0;
     }
 
-    public HashMap<String, PostStat> getWrongAnswers() {
-        return wrongAnswers;
+    public void clearCurrentWrongAnswers() {
+        currentWrongAnswers.clear();
+    }
+
+    public HashMap<String, PostStat> getCurrentWrongAnswers() {
+        return currentWrongAnswers;
     }
 
     public Set<String> getLastPostsIds() {
@@ -57,10 +61,7 @@ public class UserTestMaintenance {
 
     public void addPost(final String pid) {
         lastPostPids.add(pid);
-        System.out.println("postsNum");
-        System.out.format("", lastPostPids.size(), postsNum, "%n");
         if (lastPostPids.size() > (postsNum / 4)) {
-            System.out.println("clearing last pids");
             clear();
         }
     }
