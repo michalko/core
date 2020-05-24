@@ -57,7 +57,10 @@ public class UserTestMaintenance {
 
     public void addPost(final String pid) {
         lastPostPids.add(pid);
-        if (lastPostPids.size() > (postsNum / 2)) {
+        System.out.println("postsNum");
+        System.out.format("", lastPostPids.size(), postsNum, "%n");
+        if (lastPostPids.size() > (postsNum / 4)) {
+            System.out.println("clearing last pids");
             clear();
         }
     }

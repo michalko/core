@@ -2,7 +2,7 @@ package com.brain1.core.transport;
 
 import java.io.Serializable;
 
-public record WronglyAnsweredRecord(final String topic, final Integer realId, final String pid)
+public record WronglyAnsweredRecord( String topic,  Integer realId,  String pid)
         implements Serializable {
     /**
      *
