@@ -1,9 +1,12 @@
 package com.brain1.core.rests;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -13,7 +16,7 @@ import com.brain1.core.records.StartTestSession;
 import com.brain1.core.services.NextPostService;
 import com.brain1.core.sessionScoped.UserTestMaintenanceOldSession;
 import com.google.common.base.Objects;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -60,7 +63,7 @@ public class NextPostRest {
 
     private void maintainPrevQuestion(final boolean lastCorrect) {
         if (lastCorrect)
-            removeFromWrongAnswers();
+            updateCorrectAnswerInSession();
         else
             addToWrongAnswers();
     }
@@ -133,23 +136,27 @@ public class NextPostRest {
     }
 
     private Integer getPostIdFromDB(final String topic, final Optional<String> sub, final int topRank) {
-
-        final var postsToOmit = Optional.ofNullable(userTestMaintenance.getLastPost()).map((lastPost) -> {
-            return Sets.union(userTestMaintenance.getLastPostsIds(), Set.of(lastPost.pid()));
-        }).orElseGet(() -> null);
-
-        final var list = nextPostService.getNextPost(topic, sub, topRank, postsToOmit);
+        final var list = nextPostService.getNextPost(topic, sub, topRank, getPidsToOmit());
         final var listSize = list.size();
 
         if (userTestMaintenance.getPostsNum() == 0 || Math.abs(userTestMaintenance.getTopRank() - topRank) > 10) {
             userTestMaintenance.setPostsNum(listSize);
             userTestMaintenance.setTopRank(topRank);
         }
-
         final var postToReturn = list.get(nextPostIndex(listSize));
 
         updateUserSession(postToReturn.getId(), postToReturn.getRealPostsInTopics());
         return postToReturn.getRealPostsInTopics();
+    }
+
+    private Set<String> getPidsToOmit() {
+        return Optional.ofNullable(userTestMaintenance.getLastPost()).map(lp -> {
+            return ImmutableSet
+                    .of(Set.of(lp.pid()), userTestMaintenance.getCorrectAnswers(),
+                            userTestMaintenance.getLastPostsIds())
+                    .stream().flatMap(Collection::stream).collect(Collectors.toSet());
+
+        }).orElseGet(() -> null);
     }
 
     private void updateUserSession(@Nonnull final String pid, @Nonnull final int realId) {
@@ -158,13 +165,15 @@ public class NextPostRest {
         userTestMaintenance.setAnswerCount(userTestMaintenance.getAnswerCount() + 1);
     }
 
-    private void removeFromWrongAnswers() {
+    private void updateCorrectAnswerInSession() {
         Optional.ofNullable(userTestMaintenance.getLastPost()).ifPresent(lastPost -> {
             final var postStat = userTestMaintenance.getCurrentWrongAnswers().get(lastPost.pid());
-            if (postStat != null) {
-                userTestMaintenance.getCurrentWrongAnswers().put(lastPost.pid(),
-                        new PostStat(postStat.pid(), postStat.realId(), postStat.count() - 1));
-            }
+
+            final Consumer<PostStat> decrementWrongAnswerForAQuestion = ps -> userTestMaintenance
+                    .getCurrentWrongAnswers().put(lastPost.pid(), new PostStat(ps.pid(), ps.realId(), ps.count() - 1));
+            final Runnable addToCorrectlyAnswered = () -> userTestMaintenance.getCorrectAnswers().add(lastPost.pid());
+            Optional.ofNullable(postStat).ifPresentOrElse(decrementWrongAnswerForAQuestion, addToCorrectlyAnswered);
+
         });
     }
 

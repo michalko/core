@@ -1,10 +1,9 @@
 package com.brain1.core.sessionScoped;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.annotation.Nonnull;
 
@@ -25,11 +24,20 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     private String topic;
     private Queue<WronglyAnsweredRecord> wronglyAnsweredRecords;
     private String currentSub;
+    private Set<String> correctAnswers = new HashSet<>(); // don't include correctly answered questions in current test anymore
 
     public void init(@Nonnull final String uid, @Nonnull final String topic) {
         this.uid = uid;
         this.topic = topic;
         loadWronglyAnswered();
+    }
+
+    public Set<String> getCorrectAnswers() {
+        return correctAnswers;
+    }
+
+    public void setCorrectAnswers(final Set<String> correctAnswers) {
+        this.correctAnswers = correctAnswers;
     }
 
     private void loadWronglyAnswered() {
@@ -56,7 +64,7 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
         return currentSub;
     }
 
-    public void setCurrentSub(String currentSub) {
+    public void setCurrentSub(final String currentSub) {
         this.currentSub = currentSub;
     }
 
