@@ -68,14 +68,14 @@ public class NextPostRest {
             addToWrongAnswers();
     }
 
-    private void updateLastSub(Optional<String> sub) {
+    private void updateLastSub(final Optional<String> sub) {
         if (subHasChanged(sub)) {
             userTestMaintenance.clearCurrentWrongAnswers();
             userTestMaintenance.setCurrentSub(sub.orElse(null));
         }
     }
 
-    private boolean subHasChanged(Optional<String> sub) {
+    private boolean subHasChanged(final Optional<String> sub) {
         return !Objects.equal(sub.orElse(null), userTestMaintenance.getCurrentSub());
     }
 
@@ -90,7 +90,7 @@ public class NextPostRest {
 
     @PostMapping("/startForUser")
     @ResponseStatus(code = HttpStatus.OK)
-    public int createUserTestSession(@NotNull @RequestBody StartTestSession sts) {
+    public int createUserTestSession(@NotNull @RequestBody final StartTestSession sts) {
         userTestMaintenance.init(sts.uid(), sts.topic());
         return userTestMaintenance.getWronglyAnsweredRecords().size();
     }
@@ -143,7 +143,7 @@ public class NextPostRest {
             userTestMaintenance.setPostsNum(listSize);
             userTestMaintenance.setTopRank(topRank);
         }
-        final var postToReturn = list.get(nextPostIndex(listSize));
+        final var postToReturn = list.get(NextPostId.nextPostIndex(listSize));
 
         updateUserSession(postToReturn.getId(), postToReturn.getRealPostsInTopics());
         return postToReturn.getRealPostsInTopics();
@@ -177,12 +177,17 @@ public class NextPostRest {
         });
     }
 
-    static private Function<Integer, Integer> mean = size -> size / 2;
-    static private Function<Integer, Integer> stdDeviation = size -> size / 4;
+    private static class NextPostId {
+        /** 
+         * calcs id of next pid
+        */
+        static private Function<Integer, Integer> mean = size -> size / 2;
+        static private Function<Integer, Integer> stdDeviation = size -> size / 4;
 
-    private int nextPostIndex(final int listSize) {
-        final var ng = random.nextGaussian();
-        final var gauss = (int) (stdDeviation.apply(listSize) * (ng) + mean.apply(listSize));
-        return gauss < 0 || gauss >= listSize ? listSize / 2 : gauss;
+        public static int nextPostIndex(final int listSize) {
+            final var ng = random.nextGaussian();
+            final var gauss = (int) (stdDeviation.apply(listSize) * (ng) + mean.apply(listSize));
+            return gauss < 0 || gauss >= listSize ? listSize / 2 : gauss;
+        }
     }
 }
