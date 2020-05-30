@@ -1,5 +1,6 @@
 package com.brain1.core.rests;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
@@ -45,7 +46,24 @@ public class NextPostRest {
     @Autowired
     private NextPostService nextPostService;
 
-    private final record ReplyStartTestSession(int wronglyAnsweredQuestions, long noTopicQuestions) {
+    private final record ReplyStartTestSession(int wronglyAnsweredQuestions, long noTopicQuestions)
+            implements Serializable {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 3813261463226331186L;
+
+        public int getWronglyAnsweredQuestions() {
+            return wronglyAnsweredQuestions;
+        }
+
+        public long getNoTopicQuestions() {
+            return noTopicQuestions;
+        }
+
+        public static long getSerialversionuid() {
+            return serialVersionUID;
+        }
     }
 
     @PostMapping("/startForUser")

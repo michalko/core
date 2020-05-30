@@ -8,7 +8,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import com.brain1.core.feignRests.MasterdataFeign;
-import com.brain1.core.transport.ReplyStartTestSession;
+import com.brain1.core.transport.StartTestSessionData;
 import com.brain1.core.transport.WronglyAnsweredRecord;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     }
 
     private void initUserSession() {
-        ReplyStartTestSession replyStartTestSession = masterdataFeign.initSession(uid, topic);
+        StartTestSessionData replyStartTestSession = masterdataFeign.initSession(uid, topic);
         this.wronglyAnsweredRecords = new LinkedList<WronglyAnsweredRecord>(replyStartTestSession.wa());
         this.topicQuestionNum = replyStartTestSession.noTopicQuestions();
     }

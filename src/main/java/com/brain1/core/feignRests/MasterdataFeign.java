@@ -4,7 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import com.brain1.core.transport.ReplyStartTestSession;
+import com.brain1.core.transport.StartTestSessionData;
 import com.brain1.core.transport.WronglyAnsweredRecord;
 
 import org.springframework.cloud.openfeign.FeignClient;
@@ -19,7 +19,7 @@ import feign.hystrix.FallbackFactory;
 @FeignClient(name = "masterdata", fallbackFactory = MasterdataFeignFallbackFactory.class)
 public interface MasterdataFeign {
     @RequestMapping(method = RequestMethod.GET, value = "/initSession/start/{uid}/{topic}")
-    ReplyStartTestSession initSession(@PathVariable @Nonnull String uid, @PathVariable @Nonnull String topic);
+    StartTestSessionData initSession(@PathVariable @Nonnull String uid, @PathVariable @Nonnull String topic);
 
     @RequestMapping(method = RequestMethod.GET, value = "/wrongly/{uid}/{topic}")
     List<WronglyAnsweredRecord> getWronglyAnswered(@PathVariable @Nonnull String uid,
@@ -45,7 +45,7 @@ class MasterdataFeignFallbackFactory implements FallbackFactory<MasterdataFeign>
             }
 
             @Override
-            public ReplyStartTestSession initSession(String uid, String topic) {
+            public StartTestSessionData initSession(String uid, String topic) {
                 // TODO Auto-generated method stub
                 System.out.println("fuck");
                 return null;
