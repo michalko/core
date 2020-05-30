@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import com.brain1.core.transport.ReplyStartTestSession;
 import com.brain1.core.transport.WronglyAnsweredRecord;
 
 import org.springframework.cloud.openfeign.FeignClient;
@@ -17,10 +18,14 @@ import feign.hystrix.FallbackFactory;
 
 @FeignClient(name = "masterdata", fallbackFactory = MasterdataFeignFallbackFactory.class)
 public interface MasterdataFeign {
+    @RequestMapping(method = RequestMethod.GET, value = "/initSession/start/{uid}/{topic}")
+    ReplyStartTestSession initSession(@PathVariable @Nonnull String uid, @PathVariable @Nonnull String topic);
+
     @RequestMapping(method = RequestMethod.GET, value = "/wrongly/{uid}/{topic}")
     List<WronglyAnsweredRecord> getWronglyAnswered(@PathVariable @Nonnull String uid,
             @PathVariable @Nonnull String topic);
 }
+
 
 @Component
 class MasterdataFeignFallbackFactory implements FallbackFactory<MasterdataFeign> {
@@ -34,8 +39,15 @@ class MasterdataFeignFallbackFactory implements FallbackFactory<MasterdataFeign>
             @Override
             public List<WronglyAnsweredRecord> getWronglyAnswered(String uid, String topic) {
                 // TODO Auto-generated method stub
-                System.out.println("Fallback for Master feigh 1 " + httpStatus );
-                System.out.println("Fallback for Master feigh 2 " + cause.getMessage() );
+                System.out.println("Fallback for Master feigh 1 " + httpStatus);
+                System.out.println("Fallback for Master feigh 2 " + cause.getMessage());
+                return null;
+            }
+
+            @Override
+            public ReplyStartTestSession initSession(String uid, String topic) {
+                // TODO Auto-generated method stub
+                System.out.println("fuck");
                 return null;
             }
 

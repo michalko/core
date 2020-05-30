@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin(origins = { "http://localhost:3000", "https://brainmatter.xyz" })
 public class NextPostRest {
     private static Random random;
-
     static {
         random = new Random();
     }
@@ -45,6 +44,17 @@ public class NextPostRest {
 
     @Autowired
     private NextPostService nextPostService;
+
+    private final record ReplyStartTestSession(int wronglyAnsweredQuestions, long noTopicQuestions) {
+    }
+
+    @PostMapping("/startForUser")
+    @ResponseStatus(code = HttpStatus.OK)
+    public ReplyStartTestSession createUserTestSession(@NotNull @RequestBody final StartTestSession sts) {
+        userTestMaintenance.init(sts.uid(), sts.topic());
+        return new ReplyStartTestSession(userTestMaintenance.getWronglyAnsweredRecords().size(),
+                userTestMaintenance.getTopicQuestionNum());
+    }
 
     // @Cacheable(value = "postsNearRank")
     @GetMapping(value = "/{topic}")
@@ -86,13 +96,6 @@ public class NextPostRest {
             return getRandomWrongAnswerFromThisSession();
         else
             return getPostIdFromDB(topic, sub, topRank);
-    }
-
-    @PostMapping("/startForUser")
-    @ResponseStatus(code = HttpStatus.OK)
-    public int createUserTestSession(@NotNull @RequestBody final StartTestSession sts) {
-        userTestMaintenance.init(sts.uid(), sts.topic());
-        return userTestMaintenance.getWronglyAnsweredRecords().size();
     }
 
     private Integer getNextWronglyAnswered() {
@@ -178,9 +181,9 @@ public class NextPostRest {
     }
 
     private static class NextPostId {
-        /** 
+        /**
          * calcs id of next pid
-        */
+         */
         static private Function<Integer, Integer> mean = size -> size / 2;
         static private Function<Integer, Integer> stdDeviation = size -> size / 4;
 

@@ -8,6 +8,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import com.brain1.core.feignRests.MasterdataFeign;
+import com.brain1.core.transport.ReplyStartTestSession;
 import com.brain1.core.transport.WronglyAnsweredRecord;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +23,15 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
 
     private String uid;
     private String topic;
+    private long topicQuestionNum;
     private Queue<WronglyAnsweredRecord> wronglyAnsweredRecords;
-    private String currentSub;
-    private Set<String> correctAnswers = new HashSet<>(); // don't include correctly answered questions in current test anymore
+    private Set<String> correctAnswers = new HashSet<>(); // don't include correctly answered questions in current test
+    private String currentSub; // anymore
 
     public void init(@Nonnull final String uid, @Nonnull final String topic) {
         this.uid = uid;
         this.topic = topic;
-        loadWronglyAnswered();
+        initUserSession();
     }
 
     public Set<String> getCorrectAnswers() {
@@ -40,8 +42,10 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
         this.correctAnswers = correctAnswers;
     }
 
-    private void loadWronglyAnswered() {
-        this.wronglyAnsweredRecords = new LinkedList<>(masterdataFeign.getWronglyAnswered(uid, topic));
+    private void initUserSession() {
+        ReplyStartTestSession replyStartTestSession = masterdataFeign.initSession(uid, topic);
+        this.wronglyAnsweredRecords = new LinkedList<WronglyAnsweredRecord>(replyStartTestSession.wa());
+        this.topicQuestionNum = replyStartTestSession.noTopicQuestions();
     }
 
     public String getUid() {
@@ -66,6 +70,14 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
 
     public void setCurrentSub(final String currentSub) {
         this.currentSub = currentSub;
+    }
+
+    public long getTopicQuestionNum() {
+        return topicQuestionNum;
+    }
+
+    public void setTopicQuestionNum(long topicQuestionNum) {
+        this.topicQuestionNum = topicQuestionNum;
     }
 
 }
