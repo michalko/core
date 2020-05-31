@@ -44,7 +44,9 @@ public class UserTestMaintenance {
 
     void clear() {
         lastPostPids.clear();
+        currentWrongAnswers.clear();
         postsNum = 0;
+        lastPost = null;
     }
 
     public void clearCurrentWrongAnswers() {

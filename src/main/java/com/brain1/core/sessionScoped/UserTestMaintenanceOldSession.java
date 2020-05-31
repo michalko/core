@@ -28,7 +28,14 @@ public class UserTestMaintenanceOldSession extends UserTestMaintenance {
     private Set<String> correctAnswers = new HashSet<>(); // don't include correctly answered questions in current test
     private String currentSub; // anymore
 
+    @Override
+    public void clear() {
+        super.clear();
+        correctAnswers.clear();
+    }
+
     public void init(@Nonnull final String uid, @Nonnull final String topic) {
+        clear();
         this.uid = uid;
         this.topic = topic;
         initUserSession();
