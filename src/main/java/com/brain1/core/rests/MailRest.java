@@ -22,6 +22,7 @@ public class MailRest {
     @PostMapping
     @ResponseStatus(code = HttpStatus.OK)
     public void sentLinksMail(@RequestBody MailRequest mailRequest) {
+        System.out.println("mail to send " + mailRequest.email);
         integrationGateway.sendMessage(mailRequest);
     }
 }

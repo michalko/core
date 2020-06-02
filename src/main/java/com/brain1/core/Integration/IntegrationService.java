@@ -23,11 +23,13 @@ public class IntegrationService {
         MailMessage mailMsg = new SimpleMailMessage();
         mailMsg.setFrom("michal.lewandowski@gmail.com");
         mailMsg.setTo(message.getPayload().email);
-        mailMsg.setSubject("Links to read - Brainmatter");
+        mailMsg.setSubject("Study materials from Brainmatter");
 
-        StringBuilder textMessage = new StringBuilder("Links to skim thru: ").append(message.getPayload().listOfLinks)
-                .append(System.getProperty("line.separator").repeat(2)).append("Have fun");
+        StringBuilder textMessage = new StringBuilder("Study materials: ").append(message.getPayload().listOfLinks)
+                .append(System.getProperty("line.separator").repeat(2)).append("Have fun, bm");
         mailMsg.setText(textMessage.toString());
+
+        System.out.println(mailMsg.toString());
 
         return mailMsg;
     }

@@ -41,7 +41,7 @@ public class NextPostRest {
     }
 
     @Autowired
-    private UserTestMaintenanceOldSession userTestMaintenance;
+    private UserTestMaintenanceOldSession userTestSession;
 
     @Autowired
     private NextPostService nextPostService;
@@ -69,12 +69,20 @@ public class NextPostRest {
     @PostMapping("/startForUser")
     @ResponseStatus(code = HttpStatus.OK)
     public ReplyStartTestSession createUserTestSession(@NotNull @RequestBody final StartTestSession sts) {
-        userTestMaintenance.init(sts.uid(), sts.topic());
-        return new ReplyStartTestSession(userTestMaintenance.getWronglyAnsweredRecords().size(),
-                userTestMaintenance.getTopicQuestionNum());
+        userTestSession.init(sts.uid(), sts.topic());
+        return new ReplyStartTestSession(userTestSession.getWronglyAnsweredRecords().size(),
+                userTestSession.getTopicQuestionNum());
     }
 
     // @Cacheable(value = "postsNearRank")
+    /**
+     * 
+     * @param topic
+     * @param sub
+     * @param topRank
+     * @param lastCorrect
+     * @return pid or -1 if there are no more posts in current topic / sub
+     */
     @GetMapping(value = "/{topic}")
     @ResponseStatus(code = HttpStatus.OK)
     public @NotNull Integer getNextPost(@NotNull @PathVariable(value = "topic") final String topic,
@@ -98,13 +106,13 @@ public class NextPostRest {
 
     private void updateLastSub(final Optional<String> sub) {
         if (subHasChanged(sub)) {
-            userTestMaintenance.clearCurrentWrongAnswers();
-            userTestMaintenance.setCurrentSub(sub.orElse(null));
+            userTestSession.clear();
+            userTestSession.setCurrentSub(sub.orElse(null));
         }
     }
 
     private boolean subHasChanged(final Optional<String> sub) {
-        return !Objects.equal(sub.orElse(null), userTestMaintenance.getCurrentSub());
+        return !Objects.equal(sub.orElse(null), userTestSession.getCurrentSub());
     }
 
     private Integer getNextQuestion(final String topic, final Optional<String> sub, final int topRank) {
@@ -117,26 +125,26 @@ public class NextPostRest {
     }
 
     private Integer getNextWronglyAnswered() {
-        System.out.println(userTestMaintenance.getWronglyAnsweredRecords().toString());
-        final var post = userTestMaintenance.getWronglyAnsweredRecords().poll();
+        System.out.println(userTestSession.getWronglyAnsweredRecords().toString());
+        final var post = userTestSession.getWronglyAnsweredRecords().poll();
         updateUserSession(post.pid(), post.realId());
         return post.realId();
     }
 
     private boolean isWronglyAnsweredQueueNotEmpty() {
-        return userTestMaintenance.getWronglyAnsweredRecords() != null
-                && !userTestMaintenance.getWronglyAnsweredRecords().isEmpty();
+        return userTestSession.getWronglyAnsweredRecords() != null
+                && !userTestSession.getWronglyAnsweredRecords().isEmpty();
     }
 
     private void addToWrongAnswers() {
-        if (userTestMaintenance.getLastPost() != null) {
-            userTestMaintenance.getCurrentWrongAnswers().put(userTestMaintenance.getLastPost().pid(), new PostStat(
-                    userTestMaintenance.getLastPost().pid(), userTestMaintenance.getLastPost().realId(), 2));
+        if (userTestSession.getLastPost() != null) {
+            userTestSession.getCurrentWrongAnswers().put(userTestSession.getLastPost().pid(),
+                    new PostStat(userTestSession.getLastPost().pid(), userTestSession.getLastPost().realId(), 2));
         }
     }
 
     private boolean timeToRepeatWronglyAnsweredInSession() {
-        return userTestMaintenance.getCurrentWrongAnswers().size() > 1 && userTestMaintenance.getAnswerCount() % 4 == 0;
+        return userTestSession.getCurrentWrongAnswers().size() > 1 && userTestSession.getAnswerCount() % 4 == 0;
     }
 
     /**
@@ -146,23 +154,27 @@ public class NextPostRest {
      */
     private Integer getRandomWrongAnswerFromThisSession() {
         final Random generator = new Random();
-        final var values = userTestMaintenance.getCurrentWrongAnswers().values().toArray();
+        final var values = userTestSession.getCurrentWrongAnswers().values().toArray();
         PostStat nextRandomPost = null;
         do {
             nextRandomPost = (PostStat) values[generator.nextInt(values.length)];
-        } while (nextRandomPost.realId() == userTestMaintenance.getLastPost().realId());
+        } while (nextRandomPost.realId() == userTestSession.getLastPost().realId());
 
         updateUserSession(nextRandomPost.pid(), nextRandomPost.realId());
         return nextRandomPost.realId();
     }
 
     private Integer getPostIdFromDB(final String topic, final Optional<String> sub, final int topRank) {
-        final var list = nextPostService.getNextPost(topic, sub, topRank, getPidsToOmit());
-        final var listSize = list.size();
+        var list = nextPostService.getNextPost(topic, sub, topRank, getPidsToOmit());
+        final int listSize = list.size();
+        if (noMoreQuestionsInCurrentSub(listSize)) {
+            userTestSession.setCurrentSub(null);
+            return -1;
+        }
 
-        if (userTestMaintenance.getPostsNum() == 0 || Math.abs(userTestMaintenance.getTopRank() - topRank) > 10) {
-            userTestMaintenance.setPostsNum(listSize);
-            userTestMaintenance.setTopRank(topRank);
+        if (userTestSession.getPostsNum() == 0 || Math.abs(userTestSession.getTopRank() - topRank) > 10) {
+            userTestSession.setPostsNum(listSize);
+            userTestSession.setTopRank(topRank);
         }
         final var postToReturn = list.get(NextPostId.nextPostIndex(listSize));
 
@@ -170,29 +182,34 @@ public class NextPostRest {
         return postToReturn.getRealPostsInTopics();
     }
 
+    private boolean noMoreQuestionsInCurrentSub(final int listSize) {
+        return listSize == 0 && userTestSession.getCurrentSub() != null;
+    }
+
     private Set<String> getPidsToOmit() {
-        return Optional.ofNullable(userTestMaintenance.getLastPost()).map(lp -> {
+        var r = Optional.ofNullable(userTestSession.getLastPost()).map(lp -> {
             return ImmutableSet
-                    .of(Set.of(lp.pid()), userTestMaintenance.getCorrectAnswers(),
-                            userTestMaintenance.getLastPostsIds())
+                    .of(Set.of(lp.pid()), userTestSession.getCorrectAnswers(), userTestSession.getLastPostsIds())
                     .stream().flatMap(Collection::stream).collect(Collectors.toSet());
 
         }).orElseGet(() -> null);
+        System.out.println(r.toString());
+        return r;
     }
 
     private void updateUserSession(@Nonnull final String pid, @Nonnull final int realId) {
-        userTestMaintenance.addPost(pid);
-        userTestMaintenance.setLastPost(new PostStat(pid, realId, 0));
-        userTestMaintenance.setAnswerCount(userTestMaintenance.getAnswerCount() + 1);
+        userTestSession.addPost(pid);
+        userTestSession.setLastPost(new PostStat(pid, realId, 0));
+        userTestSession.setAnswerCount(userTestSession.getAnswerCount() + 1);
     }
 
     private void updateCorrectAnswerInSession() {
-        Optional.ofNullable(userTestMaintenance.getLastPost()).ifPresent(lastPost -> {
-            final var postStat = userTestMaintenance.getCurrentWrongAnswers().get(lastPost.pid());
+        Optional.ofNullable(userTestSession.getLastPost()).ifPresent(lastPost -> {
+            final var postStat = userTestSession.getCurrentWrongAnswers().get(lastPost.pid());
 
-            final Consumer<PostStat> decrementWrongAnswerForAQuestion = ps -> userTestMaintenance
-                    .getCurrentWrongAnswers().put(lastPost.pid(), new PostStat(ps.pid(), ps.realId(), ps.count() - 1));
-            final Runnable addToCorrectlyAnswered = () -> userTestMaintenance.getCorrectAnswers().add(lastPost.pid());
+            final Consumer<PostStat> decrementWrongAnswerForAQuestion = ps -> userTestSession.getCurrentWrongAnswers()
+                    .put(lastPost.pid(), new PostStat(ps.pid(), ps.realId(), ps.count() - 1));
+            final Runnable addToCorrectlyAnswered = () -> userTestSession.getCorrectAnswers().add(lastPost.pid());
             Optional.ofNullable(postStat).ifPresentOrElse(decrementWrongAnswerForAQuestion, addToCorrectlyAnswered);
 
         });
