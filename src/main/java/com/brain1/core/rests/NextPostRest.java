@@ -193,7 +193,10 @@ public class NextPostRest {
                     .stream().flatMap(Collection::stream).collect(Collectors.toSet());
 
         }).orElseGet(() -> null);
-        System.out.println(r.toString());
+        if (r != null) {
+            System.out.println("posts to omit " + r.toString());
+        }
+
         return r;
     }
 
