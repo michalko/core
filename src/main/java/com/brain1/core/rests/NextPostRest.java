@@ -210,8 +210,14 @@ public class NextPostRest {
         Optional.ofNullable(userTestSession.getLastPost()).ifPresent(lastPost -> {
             final var postStat = userTestSession.getCurrentWrongAnswers().get(lastPost.pid());
 
-            final Consumer<PostStat> decrementWrongAnswerForAQuestion = ps -> userTestSession.getCurrentWrongAnswers()
-                    .put(lastPost.pid(), new PostStat(ps.pid(), ps.realId(), ps.count() - 1));
+            final Consumer<PostStat> decrementWrongAnswerForAQuestion = ps -> {
+                final var updatedCount = ps.count() - 1;
+                if (updatedCount <= 0)
+                    userTestSession.getCurrentWrongAnswers().remove(lastPost.pid());
+                else
+                    userTestSession.getCurrentWrongAnswers().put(lastPost.pid(),
+                            new PostStat(ps.pid(), ps.realId(), updatedCount));
+            };
             final Runnable addToCorrectlyAnswered = () -> userTestSession.getCorrectAnswers().add(lastPost.pid());
             Optional.ofNullable(postStat).ifPresentOrElse(decrementWrongAnswerForAQuestion, addToCorrectlyAnswered);
 
